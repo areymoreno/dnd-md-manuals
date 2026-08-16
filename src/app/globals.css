@@ -1,26 +1,170 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --chrome-bg: #14110e;
+  --chrome-panel: #1d1916;
+  --chrome-border: #342d25;
+  --chrome-text: #e8e0d2;
+  --chrome-muted: #9c9083;
+  --chrome-accent: #c9ad6a;
+  --chrome-accent-strong: #922610;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-chrome-bg: var(--chrome-bg);
+  --color-chrome-panel: var(--chrome-panel);
+  --color-chrome-border: var(--chrome-border);
+  --color-chrome-text: var(--chrome-text);
+  --color-chrome-muted: var(--chrome-muted);
+  --color-chrome-accent: var(--chrome-accent);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--chrome-bg);
+  color: var(--chrome-text);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------- app layout --- */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Sin esto el panel crece con el documento en vez de recortarlo, y entonces
+     CodeMirror nunca tiene altura definida contra la que hacer scroll. */
+  min-height: 0;
+  border-right: 1px solid var(--chrome-border);
+  background: var(--chrome-panel);
+}
+
+/* Envoltorio que pinta @uiw/react-codemirror: es quien debe llenar el panel,
+   porque el `height: 100%` del editor se mide contra él. */
+.editor-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-status,
+.editor-tabs {
+  flex: 0 0 auto;
+}
+
+.preview-pane {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background:
+    radial-gradient(ellipse at top, #2a241d, #100e0c 70%);
+  padding: 1.5rem 1rem 4rem;
+}
+
+.split-handle {
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.split-handle::after {
+  content: "";
+  position: absolute;
+  inset: 0 2px;
+  background: var(--chrome-border);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.split-handle:hover::after,
+.split-handle:active::after {
+  opacity: 1;
+}
+
+/* `zoom` en vez de `transform: scale()`: afecta al layout, así que el panel
+   sigue teniendo barras de scroll correctas al ampliar por encima del 100%. */
+.brew-scaler {
+  zoom: var(--brew-zoom, 1);
+  width: fit-content;
+  margin: 0 auto;
+}
+
+/* ------------------------------------------------------------- editor --- */
+
+.cm-editor {
+  height: 100%;
+  max-height: 100%;
+  font-size: 13.5px;
+}
+
+.cm-editor .cm-scroller {
+  overflow: auto;
+}
+
+.cm-editor .cm-scroller {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas,
+    monospace;
+  line-height: 1.65;
+}
+
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+
+/* -------------------------------------------------------------- print --- */
+
+@media print {
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+
+  .app-chrome,
+  .editor-pane,
+  .split-handle {
+    display: none !important;
+  }
+
+  .app-shell,
+  .app-main {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .preview-pane {
+    overflow: visible !important;
+    padding: 0 !important;
+    background: none !important;
+    flex: none !important;
+  }
+
+  .brew-scaler {
+    zoom: 1 !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
 }

@@ -1,0 +1,1023 @@
+/*
+ * brew.css — estilos de página estilo manual de D&D 5e.
+ *
+ * Este archivo es la única fuente de verdad del renderizado: la app lo carga
+ * con <link> y el exportador de HTML lo incrusta tal cual en el archivo final.
+ *
+ * Las familias tipográficas se leen de variables CSS. Dentro de la app las
+ * define next/font (self-hosted). Si la variable no existe, cae al segundo
+ * valor del stack. Para usar las fuentes originales del PHB, mira
+ * public/fonts/README.md.
+ */
+
+/*
+ * Todo el archivo va dentro de la capa `brew`. Eso deja el CSS que el usuario
+ * escribe en la pestaña «Estilo» *sin* capa, y en la cascada lo no-encapado gana
+ * siempre a lo encapado, sin importar la especificidad. Así `.page h1 { … }`
+ * escrito por el usuario vence a `.brew .page h1 { … }` de aquí, que es lo que
+ * cualquiera espera al abrir esa pestaña.
+ */
+@layer brew;
+
+@layer brew {
+
+.brew {
+  --font-brew-body-stack: var(--font-brew-body, "EB Garamond", Garamond, "Palatino Linotype", Palatino, Georgia, serif);
+  --font-brew-heading-stack: var(--font-brew-heading, "Cinzel", "Trajan Pro", Georgia, serif);
+  --font-brew-sans-stack: var(--font-brew-sans, "Alegreya Sans", "Segoe UI", Tahoma, sans-serif);
+  --font-brew-display-stack: var(--font-brew-display, "Cinzel Decorative", "Cinzel", Georgia, serif);
+
+  --parchment: #f2e9d3;
+  --ink: #000000;
+  --accent: #58180d;
+  --rule: #c0ad6a;
+
+  --note-bg: #e0e5c1;
+  --note-border: #cbd0a6;
+  --descriptive-bg: #faf7ea;
+  --table-stripe: #e0e5c1;
+
+  --statblock-bg: #fdf1dc;
+  --statblock-accent: #922610;
+  --statblock-frame: #c9ad6a;
+
+  --page-width: 21.59cm;
+  --page-height: 27.94cm;
+  --page-padding: 1.4cm 1.9cm 1.7cm;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6cm;
+  color: var(--ink);
+}
+
+.brew[data-size="a4"] {
+  --page-width: 21cm;
+  --page-height: 29.7cm;
+}
+
+/* Segundo tema, al modo de la Guía del Dungeon Master: papel más frío, tinta
+   marrón en vez de roja y cajas verde grisáceo. Solo cambia variables. */
+.brew[data-theme="dmg"] {
+  --parchment: #e9e2d0;
+  --accent: #4a2c17;
+  --rule: #ac9b6f;
+
+  --note-bg: #dde2dd;
+  --note-border: #bfc7bd;
+  --descriptive-bg: #f6f2e4;
+  --table-stripe: #e2ddc9;
+
+  --statblock-bg: #f8f3e5;
+  --statblock-accent: #6b3410;
+  --statblock-frame: #b8a274;
+}
+
+/* Imagen guardada en el navegador que ya no existe: mejor un hueco visible
+   que un icono roto silencioso. */
+.brew .page img[data-missing] {
+  min-height: 2cm;
+  border: 2px dashed #b04a34;
+  background: rgba(176, 74, 52, 0.08);
+}
+
+/* ---------------------------------------------------------------- page --- */
+
+.brew .page {
+  position: relative;
+  box-sizing: border-box;
+  width: var(--page-width);
+  height: var(--page-height);
+  padding: var(--page-padding);
+  overflow: hidden;
+
+  columns: 2;
+  column-gap: 0.9cm;
+  column-fill: auto;
+
+  /* Crea contexto de apilado propio: así una imagen de fondo con z-index
+     negativo se queda sobre el pergamino y debajo del texto, sin escaparse
+     detrás de la página. */
+  isolation: isolate;
+
+  font-family: var(--font-brew-body-stack);
+  font-size: 0.34cm;
+  line-height: 1.27em;
+  text-align: justify;
+  hyphens: auto;
+
+  background-color: var(--parchment);
+  background-image:
+    radial-gradient(ellipse at 22% 18%, rgba(176, 138, 74, 0.16), transparent 45%),
+    radial-gradient(ellipse at 80% 30%, rgba(176, 138, 74, 0.12), transparent 40%),
+    radial-gradient(ellipse at 36% 76%, rgba(150, 110, 60, 0.14), transparent 48%),
+    radial-gradient(ellipse at 92% 88%, rgba(150, 110, 60, 0.13), transparent 40%),
+    radial-gradient(ellipse at 50% 50%, transparent 48%, rgba(130, 96, 48, 0.22) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='5' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='linear' slope='0.14'/></feComponentTransfer></filter><rect width='260' height='260' filter='url(%23p)'/></svg>");
+  background-blend-mode: normal, normal, normal, normal, normal, multiply;
+  box-shadow: 0 0 0.4cm rgba(0, 0, 0, 0.45);
+
+  /* Fuerza a que pergamino, cajas y fichas salgan también en el PDF. */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.brew .page > *:first-child {
+  margin-top: 0;
+}
+
+.brew .page-number {
+  position: absolute;
+  bottom: 0.75cm;
+  width: 0.5cm;
+  font-family: var(--font-brew-sans-stack);
+  font-size: 0.32cm;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.55);
+  z-index: 3;
+}
+
+.brew .page-odd .page-number {
+  right: 1.1cm;
+}
+
+.brew .page-even .page-number {
+  left: 1.1cm;
+}
+
+.brew .footnote {
+  position: absolute;
+  bottom: 0.7cm;
+  left: 1.9cm;
+  right: 1.9cm;
+  font-family: var(--font-brew-sans-stack);
+  font-size: 0.3cm;
+  font-style: italic;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.6);
+  z-index: 3;
+}
+
+/* ---------------------------------------------------------- typography --- */
+
+.brew .page h1,
+.brew .page h2,
+.brew .page h3,
+.brew .page h4 {
+  font-family: var(--font-brew-heading-stack);
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 0.16cm;
+  line-height: 1.1em;
+  text-align: left;
+  break-after: avoid;
+  break-inside: avoid;
+}
+
+.brew .page h1 {
+  font-size: 0.9cm;
+  letter-spacing: 0.01em;
+}
+
+.brew .page h2 {
+  font-size: 0.65cm;
+}
+
+.brew .page h3 {
+  font-size: 0.52cm;
+  border-bottom: 2px solid var(--rule);
+  padding-bottom: 0.02cm;
+}
+
+.brew .page h4 {
+  font-size: 0.4cm;
+}
+
+.brew .page h5 {
+  font-family: var(--font-brew-sans-stack);
+  font-size: 0.36cm;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 0.1cm;
+  text-align: left;
+  break-after: avoid;
+}
+
+.brew .page h6 {
+  font-family: var(--font-brew-sans-stack);
+  font-size: 0.32cm;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.1cm;
+  text-align: left;
+}
+
+.brew .page p {
+  margin: 0 0 0.26cm;
+}
+
+.brew .page a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.05cm;
+}
+
+.brew .page strong {
+  font-weight: 700;
+}
+
+.brew .page code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0 0.08cm;
+  border-radius: 0.05cm;
+}
+
+.brew .page pre {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.2cm;
+  border-radius: 0.08cm;
+  overflow-x: auto;
+  text-align: left;
+}
+
+/* Capitular automática: primer párrafo tras un H1. */
+.brew .page h1 + p::first-letter {
+  float: left;
+  font-family: var(--font-brew-display-stack);
+  font-size: 1.7cm;
+  line-height: 0.85em;
+  color: var(--accent);
+  padding: 0.08cm 0.08cm 0 0;
+}
+
+.brew .page .no-dropcap + p::first-letter,
+.brew .page h1.no-dropcap + p::first-letter {
+  float: none;
+  font-size: inherit;
+  font-family: inherit;
+  line-height: inherit;
+  color: inherit;
+  padding: 0;
+}
+
+/* ---------------------------------------------------------------- lists --- */
+
+.brew .page ul,
+.brew .page ol {
+  margin: 0 0 0.26cm;
+  padding-left: 0.6cm;
+}
+
+.brew .page li {
+  margin-bottom: 0.05cm;
+}
+
+.brew .page dl {
+  margin: 0 0 0.26cm;
+}
+
+.brew .page dt {
+  display: inline;
+  font-weight: 700;
+}
+
+.brew .page dt::after {
+  content: " ";
+}
+
+.brew .page dd {
+  display: inline;
+  margin: 0;
+}
+
+.brew .page dd::after {
+  content: "";
+  display: block;
+  margin-bottom: 0.04cm;
+}
+
+/* --------------------------------------------------------------- rules --- */
+
+.brew .page hr {
+  height: 0.16cm;
+  border: none;
+  background: var(--ink);
+  margin: 0.28cm 0;
+  clip-path: polygon(0 50%, 2.4% 0, 97.6% 0, 100% 50%, 97.6% 100%, 2.4% 100%);
+  break-after: avoid;
+}
+
+.brew .page hr.flourish {
+  height: 0.5cm;
+  background: none;
+  clip-path: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'><g fill='%23000'><path d='M2 5 L44 4.3 L44 5.7 Z'/><path d='M98 5 L56 4.3 L56 5.7 Z'/><path d='M50 1.4 L53.4 5 L50 8.6 L46.6 5 Z'/><circle cx='44.5' cy='5' r='0.9'/><circle cx='55.5' cy='5' r='0.9'/></g></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+/* --------------------------------------------------------------- table --- */
+
+.brew .page table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 0.3cm;
+  font-size: 0.98em;
+  break-inside: avoid;
+}
+
+.brew .page thead {
+  break-inside: avoid;
+}
+
+.brew .page th {
+  font-family: var(--font-brew-heading-stack);
+  font-weight: 700;
+  text-align: left;
+  padding: 0.04cm 0.12cm;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.brew .page td {
+  padding: 0.04cm 0.12cm;
+  vertical-align: top;
+}
+
+.brew .page tbody tr:nth-child(odd) {
+  background: var(--table-stripe);
+}
+
+.brew .page table.plain tbody tr:nth-child(odd) {
+  background: none;
+}
+
+/* -------------------------------------------------------------- boxes ---- */
+
+.brew .page blockquote,
+.brew .page .note {
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.05),
+    0.05cm 0.05cm 0.22cm rgba(60, 45, 25, 0.28);
+  padding: 0.26cm 0.32cm;
+  margin: 0 0 0.3cm;
+  break-inside: avoid;
+}
+
+.brew .page blockquote > *:last-child,
+.brew .page .note > *:last-child,
+.brew .page .descriptive > *:last-child {
+  margin-bottom: 0;
+}
+
+.brew .page .note h5,
+.brew .page blockquote h5 {
+  font-family: var(--font-brew-heading-stack);
+  font-size: 0.4cm;
+  color: var(--accent);
+}
+
+.brew .page .descriptive {
+  background: var(--descriptive-bg);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.12cm;
+  box-shadow: 0.05cm 0.05cm 0.22cm rgba(60, 45, 25, 0.26);
+  padding: 0.28cm 0.34cm;
+  margin: 0 0 0.3cm;
+  font-style: italic;
+  break-inside: avoid;
+}
+
+.brew .page .descriptive h5 {
+  font-family: var(--font-brew-heading-stack);
+  font-style: normal;
+  font-size: 0.4cm;
+  color: var(--accent);
+}
+
+.brew .page .quote {
+  font-style: italic;
+  border-left: 0.08cm solid var(--rule);
+  padding-left: 0.28cm;
+  margin: 0 0 0.3cm;
+}
+
+.brew .page .brew-error {
+  background: #ffe6e6;
+  border: 1px solid #c00;
+  color: #900;
+  font-family: var(--font-brew-sans-stack);
+  font-size: 0.3cm;
+  padding: 0.2cm;
+  margin-bottom: 0.3cm;
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+/* ----------------------------------------------------------- stat block --- */
+
+.brew .page .statblock {
+  position: relative;
+  background: var(--statblock-bg);
+  font-family: var(--font-brew-sans-stack);
+  font-size: 0.33cm;
+  line-height: 1.2em;
+  text-align: left;
+  padding: 0.3cm 0.34cm;
+  margin: 0 0 0.34cm;
+  box-shadow: 0.06cm 0.06cm 0.24cm rgba(60, 45, 25, 0.3);
+  break-inside: avoid;
+}
+
+.brew .page .statblock.frame {
+  border: 0.07cm solid var(--statblock-frame);
+  padding: 0.24cm 0.28cm;
+}
+
+.brew .page .statblock.frame::before {
+  content: "";
+  position: absolute;
+  inset: 0.04cm;
+  border: 1px solid rgba(146, 38, 16, 0.3);
+  pointer-events: none;
+}
+
+.brew .page .statblock.wide {
+  column-span: all;
+}
+
+.brew .page .statblock.wide .statblock-inner {
+  columns: 2;
+  column-gap: 0.4cm;
+  column-fill: balance;
+}
+
+.brew .page .statblock h1,
+.brew .page .statblock h2,
+.brew .page .statblock h3,
+.brew .page .statblock h4 {
+  color: var(--statblock-accent);
+  margin: 0;
+}
+
+.brew .page .statblock .creature-heading h1 {
+  font-family: var(--font-brew-heading-stack);
+  font-size: 0.62cm;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.05em;
+}
+
+.brew .page .statblock .creature-heading h2 {
+  font-family: var(--font-brew-body-stack);
+  font-size: 0.33cm;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 0.06cm;
+}
+
+.brew .page .statblock-divider {
+  display: block;
+  width: 100%;
+  height: 0.14cm;
+  margin: 0.09cm 0;
+  fill: var(--statblock-accent);
+  stroke: var(--statblock-accent);
+  stroke-width: 1;
+}
+
+.brew .page .statblock .property-line {
+  margin-bottom: 0.02cm;
+  text-indent: -0.3cm;
+  padding-left: 0.3cm;
+}
+
+.brew .page .statblock .property-line h4,
+.brew .page .statblock .property-line p {
+  display: inline;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.brew .page .statblock .property-line p {
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0;
+}
+
+.brew .page .statblock .property-line h4::after {
+  content: " ";
+}
+
+.brew .page .statblock .abilities {
+  display: flex;
+  justify-content: space-between;
+  text-align: center;
+  margin: 0.06cm 0;
+}
+
+.brew .page .statblock .ability {
+  flex: 1 1 0;
+}
+
+.brew .page .statblock .ability h4 {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+}
+
+.brew .page .statblock .ability p {
+  color: var(--ink);
+  margin: 0;
+}
+
+.brew .page .statblock-section h3 {
+  font-family: var(--font-brew-heading-stack);
+  font-size: 0.44cm;
+  font-weight: 400;
+  font-variant: small-caps;
+  border: none;
+  padding: 0;
+  margin-top: 0.14cm;
+}
+
+.brew .page .statblock-section + .statblock-section {
+  margin-top: 0.06cm;
+}
+
+.brew .page .statblock-entry p,
+.brew .page .statblock-intro p,
+.brew .page .statblock-description p {
+  margin: 0 0 0.14cm;
+  color: var(--ink);
+  text-indent: -0.3cm;
+  padding-left: 0.3cm;
+}
+
+.brew .page .statblock-description {
+  font-family: var(--font-brew-body-stack);
+  margin-top: 0.16cm;
+}
+
+.brew .page .statblock-description p {
+  text-indent: 0;
+  padding-left: 0;
+}
+
+/* -------------------------------------------------------------- layout --- */
+
+.brew .page .column-break {
+  break-before: column;
+  height: 0;
+}
+
+.brew .page .wide {
+  column-span: all;
+}
+
+.brew .page .columns-3 {
+  columns: 3;
+  column-gap: 0.5cm;
+}
+
+.brew .page .center {
+  text-align: center;
+}
+
+.brew .page .right {
+  text-align: right;
+}
+
+.brew .page img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Una imagen con medidas propias (inyectadas con `{width:816px,…}`) manda sobre
+   el ajuste a la columna: es la vía para fondos a sangre y portadas. */
+.brew .page img[style*="width"] {
+  max-width: none;
+}
+
+.brew .page img[style*="absolute"],
+.brew .page img[style*="fixed"] {
+  z-index: -1;
+}
+
+/* Un párrafo cuyo único contenido es una imagen posicionada no debe ocupar
+   sitio ni empujar el texto. */
+.brew .page p:has(> img[style*="absolute"]:only-child) {
+  margin: 0;
+}
+
+/* Ilustración a sangre. Se estira a la página entera, sea Carta o A4, así que
+   no hace falta escribir medidas en píxeles. Vale como bloque
+   (`{{cover ![](url) }}`) o como clase sobre la imagen (`![](url) {cover}`). */
+.brew .page .cover,
+.brew .page img.cover {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  margin: 0;
+  z-index: -1;
+}
+
+.brew .page .cover img,
+.brew .page img.cover {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+
+/* `{contain}` la encaja entera en vez de recortarla. */
+.brew .page .cover.contain img,
+.brew .page img.cover.contain {
+  object-fit: contain;
+}
+
+.brew .page .frame-image img {
+  border: 0.1cm solid var(--statblock-frame);
+  box-shadow: 0.06cm 0.06cm 0.22cm rgba(60, 45, 25, 0.35);
+}
+
+.brew .page .artist {
+  font-family: var(--font-brew-sans-stack);
+  font-size: 0.26cm;
+  font-style: italic;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.55);
+  margin-top: 0.08cm;
+}
+
+/* ---------------------------------------------------- índice / portadas --- */
+
+.brew .page .toc ul {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 0.1cm;
+}
+
+.brew .page .toc ul ul {
+  padding-left: 0.5cm;
+}
+
+.brew .page .toc li {
+  margin-bottom: 0;
+}
+
+.brew .page .toc h1,
+.brew .page .toc h2,
+.brew .page .toc h3,
+.brew .page .toc h4,
+.brew .page .toc h5 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.brew .page .toc h3 {
+  font-size: 0.42cm;
+  margin-top: 0.16cm;
+}
+
+.brew .page .toc > ul > li:first-child h3 {
+  margin-top: 0;
+}
+
+.brew .page .toc h4 {
+  font-size: 0.36cm;
+  color: var(--ink);
+}
+
+.brew .page .toc li li h4,
+.brew .page .toc li li li {
+  font-family: var(--font-brew-body-stack);
+  font-size: 0.34cm;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.brew .page .toc a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15cm;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Estructura de Homebrewery: `[{{ Nombre}}{{ 12}}](#p12)` — el primer span se
+   estira con la guía de puntos y el segundo queda pegado al margen. */
+.brew .page .toc a > span:first-child {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 0.15cm;
+  min-width: 0;
+}
+
+.brew .page .toc a > span:first-child::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px dotted rgba(0, 0, 0, 0.45);
+  transform: translateY(-0.06cm);
+}
+
+.brew .page .toc a > span:last-child {
+  flex: 0 0 auto;
+}
+
+/* Portadas: una sola columna, a sangre y sin textura de pergamino. Quitar la
+   textura importa: con `mix-blend-mode: multiply` la ilustración se multiplica
+   por lo que haya debajo, y el pergamino la ensucia y la amarillea. */
+.brew .page:has(> .frontCover),
+.brew .page:has(> .backCover),
+.brew .page:has(> .partCover) {
+  columns: 1;
+  padding: 0;
+  text-align: center;
+  background-color: #ffffff;
+  background-image: none;
+}
+
+/* Una portada no lleva número de página. */
+.brew .page:has(> .frontCover) .page-number,
+.brew .page:has(> .backCover) .page-number,
+.brew .page:has(> .partCover) .page-number {
+  display: none;
+}
+
+.brew .page > .frontCover,
+.brew .page > .backCover,
+.brew .page > .partCover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* La cenefa es opcional: `{{frontCover,framed }}`. La mayoría de las
+   ilustraciones de portada ya traen la suya y dos marcos se estorban. */
+.brew .page > .framed::before {
+  content: "";
+  position: absolute;
+  inset: 0.6cm;
+  border: 0.11cm solid var(--statblock-frame);
+}
+
+.brew .page > .framed::after {
+  content: "";
+  position: absolute;
+  inset: 0.8cm;
+  border: 0.035cm solid var(--statblock-frame);
+}
+
+/* Sobre una ilustración a sangre el texto va en blanco; sin ella, en el rojo
+   de siempre, que sobre papel blanco sí se lee. */
+.brew .page:has(.cover),
+.brew .page:has(img[style*="absolute"]) {
+  --cover-ink: #ffffff;
+  --cover-shadow:
+    0 0 0.24cm rgba(0, 0, 0, 0.85),
+    0 0.05cm 0.12cm rgba(0, 0, 0, 0.7);
+}
+
+.brew .page:has(> .frontCover) > h1,
+.brew .page:has(> .partCover) > h1,
+.brew .page:has(> .frontCover) > h2,
+.brew .page:has(> .partCover) > h2 {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  margin: 0 2cm 0.3cm;
+  color: var(--cover-ink, var(--accent));
+  text-shadow: var(--cover-shadow, none);
+}
+
+.brew .page:has(> .frontCover) > h1 {
+  font-size: 1.5cm;
+  padding-top: 3.4cm;
+}
+
+.brew .page:has(> .frontCover) > h2 {
+  font-size: 0.72cm;
+  font-weight: 400;
+}
+
+.brew .page:has(> .frontCover) .footnote,
+.brew .page:has(> .partCover) .footnote {
+  z-index: 3;
+  bottom: 1.5cm;
+  color: var(--cover-ink, rgba(0, 0, 0, 0.6));
+  font-style: normal;
+  font-size: 0.36cm;
+  text-shadow: var(--cover-shadow, none);
+}
+
+/* Número de página escrito a mano con {{pageNumber n}}. */
+.brew .page .pageNumber {
+  position: absolute;
+  bottom: 0.75cm;
+  width: 0.9cm;
+  z-index: 3;
+  font-family: var(--font-brew-sans-stack);
+  font-size: 0.32cm;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.brew .page-odd .pageNumber {
+  right: 1.1cm;
+}
+
+.brew .page-even .pageNumber {
+  left: 1.1cm;
+}
+
+.brew .page .pageNumber.auto {
+  display: none;
+}
+
+/* Línea en blanco explícita, escrita con `:` en una línea suelta. */
+.brew .page .blank-line {
+  height: 1.27em;
+}
+
+/* --------------------------------------------------------------- print --- */
+
+@media print {
+  .brew {
+    display: block;
+    gap: 0;
+  }
+
+  .brew .page {
+    box-shadow: none;
+    break-after: page;
+    /* Chrome redondea hacia arriba; 0.02cm de holgura evita páginas fantasma. */
+    height: calc(var(--page-height) - 0.02cm);
+  }
+
+  .brew .page:last-child {
+    break-after: auto;
+  }
+}
+
+/* ------------------------------------------------------------ adornos --- */
+
+/*
+ * Bordes rasgados. Se hacen con `mask-image`: una onda irregular en SVG que
+ * recorta el borde del elemento. `{torn}` los cuatro lados, o el lado suelto
+ * con `{torn-bottom}`, `{torn-top}`, `{torn-left}`, `{torn-right}`.
+ */
+.brew .page .torn,
+.brew .page .torn-top,
+.brew .page .torn-bottom,
+.brew .page .torn-left,
+.brew .page .torn-right {
+  --torn-wave: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='16' preserveAspectRatio='none' viewBox='0 0 240 16'><path d='M0 16 V7 Q8 3 16 6 T32 5 T48 8 T64 4 T80 7 T96 3 T112 6 T128 9 T144 4 T160 7 T176 5 T192 8 T208 4 T224 7 T240 6 V16 Z' fill='black'/></svg>");
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  -webkit-mask-size: 240px 16px;
+  mask-size: 240px 16px;
+}
+
+.brew .page .torn-bottom {
+  -webkit-mask-image: var(--torn-wave), linear-gradient(#000, #000);
+  mask-image: var(--torn-wave), linear-gradient(#000, #000);
+  -webkit-mask-position: bottom, top;
+  mask-position: bottom, top;
+  -webkit-mask-size: 240px 16px, 100% calc(100% - 15px);
+  mask-size: 240px 16px, 100% calc(100% - 15px);
+  -webkit-mask-repeat: repeat-x, no-repeat;
+  mask-repeat: repeat-x, no-repeat;
+}
+
+.brew .page .torn-top {
+  -webkit-mask-image: var(--torn-wave), linear-gradient(#000, #000);
+  mask-image: var(--torn-wave), linear-gradient(#000, #000);
+  -webkit-mask-position: top, bottom;
+  mask-position: top, bottom;
+  -webkit-mask-size: 240px 16px, 100% calc(100% - 15px);
+  mask-size: 240px 16px, 100% calc(100% - 15px);
+  -webkit-mask-repeat: repeat-x, no-repeat;
+  mask-repeat: repeat-x, no-repeat;
+  transform: rotate(180deg);
+}
+
+.brew .page .torn-top > * {
+  transform: rotate(180deg);
+}
+
+/* Los cuatro lados a la vez: una máscara de esquinas irregulares. */
+.brew .page .torn {
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' preserveAspectRatio='none' viewBox='0 0 200 200'><path d='M6 9 Q28 4 50 8 T96 5 T142 9 T190 6 Q196 30 192 52 T195 98 T191 144 T194 191 Q170 196 148 192 T102 195 T56 191 T9 194 Q4 170 8 148 T5 102 T9 56 Z' fill='black'/></svg>");
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' preserveAspectRatio='none' viewBox='0 0 200 200'><path d='M6 9 Q28 4 50 8 T96 5 T142 9 T190 6 Q196 30 192 52 T195 98 T191 144 T194 191 Q170 196 148 192 T102 195 T56 191 T9 194 Q4 170 8 148 T5 102 T9 56 Z' fill='black'/></svg>");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/*
+ * Manchas de acuarela: una salpicadura suave detrás del texto. Se coloca sola
+ * en la página; con `{{watercolor,wc-verde,top:4cm,left:2cm}}` la mueves.
+ */
+.brew .page .watercolor {
+  --wc-color: #922610;
+  position: absolute;
+  width: 9cm;
+  height: 9cm;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background:
+    radial-gradient(ellipse 45% 38% at 42% 40%, var(--wc-color), transparent 70%),
+    radial-gradient(ellipse 30% 42% at 62% 55%, var(--wc-color), transparent 72%),
+    radial-gradient(ellipse 38% 26% at 50% 66%, var(--wc-color), transparent 70%);
+  filter: blur(6px) contrast(1.15);
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='4' seed='7'/><feDisplacementMap in='SourceGraphic' scale='90'/></filter><circle cx='150' cy='150' r='105' fill='black' filter='url(%23w)'/></svg>");
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='4' seed='7'/><feDisplacementMap in='SourceGraphic' scale='90'/></filter><circle cx='150' cy='150' r='105' fill='black' filter='url(%23w)'/></svg>");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.brew .page .wc-rojo { --wc-color: #922610; }
+.brew .page .wc-verde { --wc-color: #3f5d2a; }
+.brew .page .wc-azul { --wc-color: #1d4e6b; }
+.brew .page .wc-morado { --wc-color: #4b2a5e; }
+.brew .page .wc-ocre { --wc-color: #8a6b1f; }
+.brew .page .wc-tinta { --wc-color: #2b2118; }
+
+/*
+ * Iconos. Se pintan con `mask` y toman el color del texto que los rodea, así
+ * que heredan el color de un encabezado o el de una nota sin tocar nada.
+ * Se escriben en línea: `{{icon-d20}}`, `{{icon-espada}}`…
+ */
+.brew .page [class*="icon-"] {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.12em;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.brew .page .icon-d20 {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 3 95 28v44L50 97 5 72V28Z' fill='none' stroke='black' stroke-width='7'/><path d='M50 3 24 47h52ZM24 47 5 72l19-25Zm52 0 19 25-19-25ZM24 47l26 50 26-50ZM24 47H76' fill='none' stroke='black' stroke-width='5'/></svg>");
+}
+.brew .page .icon-d6 {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='14' fill='none' stroke='black' stroke-width='8'/><circle cx='32' cy='32' r='7'/><circle cx='68' cy='32' r='7'/><circle cx='50' cy='50' r='7'/><circle cx='32' cy='68' r='7'/><circle cx='68' cy='68' r='7'/></svg>");
+}
+.brew .page .icon-d4 {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 8 92 88H8Z' fill='none' stroke='black' stroke-width='8' stroke-linejoin='round'/><path d='M50 8v54M50 62 8 88m42-26 42 26' fill='none' stroke='black' stroke-width='5'/></svg>");
+}
+.brew .page .icon-espada {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M78 8 40 46l-8 16 16-8L86 16Z' fill='none' stroke='black' stroke-width='7' stroke-linejoin='round'/><path d='M32 62 12 82m8-12 10 10M24 88l-8-8' fill='none' stroke='black' stroke-width='7' stroke-linecap='round'/></svg>");
+}
+.brew .page .icon-escudo {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 6 88 20v30c0 24-18 38-38 44C30 88 12 74 12 50V20Z' fill='none' stroke='black' stroke-width='8' stroke-linejoin='round'/></svg>");
+}
+.brew .page .icon-calavera {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 8c22 0 34 16 34 34 0 12-6 18-6 26v8H22v-8c0-8-6-14-6-26C16 24 28 8 50 8Z' fill='none' stroke='black' stroke-width='7'/><circle cx='36' cy='46' r='8'/><circle cx='64' cy='46' r='8'/><path d='M50 60v10' stroke='black' stroke-width='6' stroke-linecap='round'/></svg>");
+}
+.brew .page .icon-pocion {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M40 8h20v22l18 34c6 12-2 26-16 26H48c-14 0-22-14-16-26l18-34Z' fill='none' stroke='black' stroke-width='7' stroke-linejoin='round'/><path d='M34 62h42' stroke='black' stroke-width='6'/></svg>");
+}
+.brew .page .icon-pergamino {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='20' y='14' width='60' height='72' rx='8' fill='none' stroke='black' stroke-width='7'/><path d='M34 34h32M34 50h32M34 66h20' stroke='black' stroke-width='6' stroke-linecap='round'/></svg>");
+}
+.brew .page .icon-corazon {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 86C24 68 10 52 10 36 10 22 20 12 32 12c8 0 14 4 18 10 4-6 10-10 18-10 12 0 22 10 22 24 0 16-14 32-40 50Z' fill='none' stroke='black' stroke-width='8' stroke-linejoin='round'/></svg>");
+}
+.brew .page .icon-llama {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 6c14 20 30 26 30 48a30 30 0 0 1-60 0c0-14 8-20 14-30 4 10 10 12 10 12 0-14-2-20 6-30Z' fill='none' stroke='black' stroke-width='7' stroke-linejoin='round'/></svg>");
+}
+.brew .page .icon-luna {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M62 8a44 44 0 1 0 30 62A38 38 0 0 1 62 8Z' fill='none' stroke='black' stroke-width='8' stroke-linejoin='round'/></svg>");
+}
+.brew .page .icon-huella {
+  --icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><ellipse cx='50' cy='62' rx='24' ry='20'/><ellipse cx='24' cy='36' rx='10' ry='13'/><ellipse cx='42' cy='22' rx='10' ry='13'/><ellipse cx='62' cy='22' rx='10' ry='13'/><ellipse cx='78' cy='38' rx='10' ry='13'/></svg>");
+}
+
+.brew .page [class*="icon-"] {
+  -webkit-mask-image: var(--icon);
+  mask-image: var(--icon);
+}
+
+}
