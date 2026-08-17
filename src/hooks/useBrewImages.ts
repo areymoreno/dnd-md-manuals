@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   deleteImage,
   getAllImages,
+  prepareImage,
   putImage,
   toDataUrl,
   type ImageMeta,
@@ -17,7 +18,9 @@ export interface BrewImages {
   /** Cambia con cada alta o baja; invalida la caché de páginas. */
   key: string;
   totalBytes: number;
-  add: (file: File) => Promise<string>;
+  /** Devuelve el id y, si se comprimió, qué se le hizo. Lo segundo se devuelve
+   *  en vez de guardarse en estado: quien llama lo necesita en el mismo tick. */
+  add: (file: File) => Promise<{ id: string; note: string | null }>;
   remove: (id: string) => Promise<void>;
   /** Las mismas imágenes como data URI, para incrustarlas al exportar. */
   asDataUrls: () => Promise<Record<string, string>>;
@@ -70,14 +73,17 @@ export function useBrewImages(): BrewImages {
 
   const add = useCallback(
     async (file: File) => {
-      const record = await putImage(file, file.name || "imagen");
+      // Se reduce antes de guardar: lo que entra aquí acaba en base64 dentro
+      // del HTML exportado, donde engorda otro 33 %.
+      const { blob: prepared, note } = await prepareImage(file);
+      const record = await putImage(prepared, file.name || "imagen");
       const { blob, ...meta } = record;
       void blob;
 
       setUrls((current) => ({ ...current, [record.id]: track(record) }));
       setList((current) => [meta, ...current]);
       setVersion((value) => value + 1);
-      return record.id;
+      return { id: record.id, note };
     },
     [track],
   );

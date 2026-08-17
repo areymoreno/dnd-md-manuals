@@ -1,20 +1,51 @@
+export type PageSize = "letter" | "a4";
+export type BrewTheme = "phb" | "dmg" | "limpio" | "grimorio" | "diario";
+export type PageColumns = 2 | 3;
+
+/**
+ * Tamaño, tema y numeración viven en el documento, no en los ajustes: son
+ * propiedades de la obra, no del escritorio. Así un manual en A4 y otro en
+ * Carta pueden convivir sin pisarse. Son opcionales para que los documentos
+ * guardados antes de este cambio sigan abriéndose.
+ */
 export interface BrewDoc {
   id: string;
   name: string;
   content: string;
   /** CSS propio del documento; ver `customCss.ts`. */
   style?: string;
+  pageSize?: PageSize;
+  theme?: BrewTheme;
+  columns?: PageColumns;
+  pageNumbers?: boolean;
+  /** Número de la primera página; permite reiniciar la cuenta por secciones. */
+  startPage?: number;
+  /** Romanos para los preliminares. */
+  numberStyle?: "arabic" | "roman";
   createdAt: number;
   updatedAt: number;
 }
 
+export const DOC_DEFAULTS = {
+  pageSize: "letter" as PageSize,
+  theme: "phb" as BrewTheme,
+  columns: 2 as PageColumns,
+  pageNumbers: true,
+};
+
+/** Ajustes del escritorio: cómo miras el documento, no cómo es el documento. */
 export interface BrewSettings {
-  pageSize: "letter" | "a4";
-  theme: "phb" | "dmg";
-  pageNumbers: boolean;
-  view: "split" | "editor" | "preview";
+  view: "split" | "editor" | "preview" | "lectura";
   zoom: number;
   splitRatio: number;
+  /** La vista previa sigue al cursor del editor. */
+  syncScroll: boolean;
+  /** Páginas enfrentadas, como un libro abierto. */
+  spread: boolean;
+  /** Marcas de corte y sangrado de 3 mm, para impresión bajo demanda. */
+  printMarks: boolean;
+  /** Corrector ortográfico del navegador en el editor. */
+  spellcheck: boolean;
 }
 
 const DOCS_KEY = "dnd-markdown.docs.v1";
@@ -22,13 +53,45 @@ const ACTIVE_KEY = "dnd-markdown.active.v1";
 const SETTINGS_KEY = "dnd-markdown.settings.v1";
 
 export const DEFAULT_SETTINGS: BrewSettings = {
-  pageSize: "letter",
-  theme: "phb",
-  pageNumbers: true,
   view: "split",
   zoom: 0,
   splitRatio: 0.42,
+  syncScroll: true,
+  spread: false,
+  printMarks: false,
+  spellcheck: true,
 };
+
+/**
+ * Traslada a cada documento el tamaño/tema/numeración que antes eran globales,
+ * para que quien ya tuviera elegido A4 no se lo encuentre de pronto en Carta.
+ */
+export function migrateDocSettings(
+  docs: BrewDoc[],
+  legacy: Partial<Record<"pageSize" | "theme" | "pageNumbers", unknown>>,
+): BrewDoc[] {
+  const size = legacy.pageSize === "a4" ? "a4" : undefined;
+  const theme = legacy.theme === "dmg" ? "dmg" : undefined;
+  const numbers = legacy.pageNumbers === false ? false : undefined;
+  if (!size && !theme && numbers === undefined) return docs;
+
+  return docs.map((doc) => ({
+    ...doc,
+    pageSize: doc.pageSize ?? size,
+    theme: doc.theme ?? theme,
+    pageNumbers: doc.pageNumbers ?? numbers,
+  }));
+}
+
+/** Lee los ajustes antiguos tal cual, para poder migrarlos una sola vez. */
+export function loadLegacySettings(): Record<string, unknown> {
+  if (!isBrowser()) return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(SETTINGS_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
 
 const isBrowser = () => typeof window !== "undefined";
 
@@ -40,6 +103,12 @@ export function newId(): string {
 export function createDoc(name = "Documento sin título", content = ""): BrewDoc {
   const now = Date.now();
   return { id: newId(), name, content, createdAt: now, updatedAt: now };
+}
+
+/** Copia un documento entero —estilo, papel, tema— con identidad nueva. */
+export function duplicateDoc(doc: BrewDoc, name = `${doc.name} (copia)`): BrewDoc {
+  const now = Date.now();
+  return { ...doc, id: newId(), name, createdAt: now, updatedAt: now };
 }
 
 export function loadDocs(): BrewDoc[] | null {
@@ -163,14 +232,17 @@ export interface Backup {
   version: 1;
   exportedAt: string;
   docs: BrewDoc[];
+  /** Fragmentos propios; ver `userSnippets.ts`. */
+  snippets?: unknown[];
 }
 
-export function buildBackup(docs: BrewDoc[]): string {
+export function buildBackup(docs: BrewDoc[], snippets: unknown[] = []): string {
   const backup: Backup = {
     format: "forja-de-manuales",
     version: 1,
     exportedAt: new Date().toISOString(),
     docs,
+    snippets,
   };
   return JSON.stringify(backup, null, 2);
 }

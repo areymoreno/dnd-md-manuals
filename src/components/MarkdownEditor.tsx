@@ -1,13 +1,16 @@
 "use client";
 
+import { autocompletion } from "@codemirror/autocomplete";
 import { css as cssLanguage } from "@codemirror/lang-css";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
-import { EditorView } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 import CodeMirror from "@uiw/react-codemirror";
 import { useMemo } from "react";
+import { brewCompletions, type CompletionData } from "@/lib/completions";
+import { markdownKeymap } from "@/lib/editorKeymap";
 
 const editorTheme = EditorView.theme(
   {
@@ -75,6 +78,12 @@ interface MarkdownEditorProps {
   /** `css` cambia el resaltado para la pestaña de estilos del documento. */
   language?: "markdown" | "css";
   placeholder?: string;
+  /** Línea (1-indexada) donde está el cursor, para seguirla en la vista previa. */
+  onCursorLine?: (line: number) => void;
+  /** Imágenes y anclas del documento, para el autocompletado. */
+  completions?: CompletionData;
+  /** Corrector ortográfico del navegador. */
+  spellcheck?: boolean;
 }
 
 export default function MarkdownEditor({
@@ -83,6 +92,9 @@ export default function MarkdownEditor({
   onReady,
   language = "markdown",
   placeholder,
+  onCursorLine,
+  completions,
+  spellcheck = false,
 }: MarkdownEditorProps) {
   const extensions = useMemo(
     () => [
@@ -91,8 +103,33 @@ export default function MarkdownEditor({
         : markdown({ base: markdownLanguage, codeLanguages: languages }),
       EditorView.lineWrapping,
       syntaxHighlighting(highlight),
+      // El corrector del navegador usa el idioma del documento, que ya es
+      // español. Marcará como faltas la sintaxis del propio proyecto, así que
+      // se puede apagar desde los ajustes.
+      EditorView.contentAttributes.of({
+        spellcheck: spellcheck ? "true" : "false",
+        autocorrect: "off",
+        autocapitalize: "off",
+      }),
+      ...(language === "markdown" ? [keymap.of(markdownKeymap)] : []),
+      ...(language === "markdown" && completions
+        ? [
+            autocompletion({
+              override: [brewCompletions(completions)],
+              icons: false,
+            }),
+          ]
+        : []),
+      EditorView.updateListener.of((update) => {
+        if (!onCursorLine) return;
+        if (!update.selectionSet && !update.docChanged) return;
+        const head = update.state.selection.main.head;
+        onCursorLine(update.state.doc.lineAt(head).number);
+      }),
     ],
-    [language],
+    // `onCursorLine` tiene que ser estable (un setState, no una lambda): si
+    // cambiara en cada render, CodeMirror recrearía sus extensiones al escribir.
+    [language, onCursorLine, completions, spellcheck],
   );
 
   return (

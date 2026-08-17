@@ -135,6 +135,14 @@ body {
 /* -------------------------------------------------------------- print --- */
 
 @media print {
+  /* Ni lectura ni pliego al imprimir: cada hoja va suelta y a su tamaño. */
+  .brew[data-reading="true"] .page {
+    height: var(--page-height);
+    columns: 2;
+    font-size: 0.34cm;
+    line-height: 1.27em;
+  }
+
   html,
   body {
     height: auto;

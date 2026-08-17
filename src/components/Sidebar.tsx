@@ -1,17 +1,17 @@
 "use client";
 
-import { Copy, FilePlus, ImagePlus, Trash2, Upload } from "lucide-react";
+import { Copy, FilePlus, History, Trash2, Upload } from "lucide-react";
 import { formatBytes } from "@/lib/images";
 import type { OutlineEntry } from "@/lib/markdown";
 import type { BrewDoc } from "@/lib/storage";
-import type { BrewImages } from "@/hooks/useBrewImages";
+import { describeAge, type Snapshot } from "@/lib/snapshots";
 
-export type SidebarTab = "docs" | "outline" | "images";
+export type SidebarTab = "docs" | "outline" | "history";
 
 const TABS: { id: SidebarTab; label: string }[] = [
   { id: "docs", label: "Documentos" },
   { id: "outline", label: "Índice" },
-  { id: "images", label: "Imágenes" },
+  { id: "history", label: "Versiones" },
 ];
 
 interface SidebarProps {
@@ -29,10 +29,14 @@ interface SidebarProps {
   outline: OutlineEntry[];
   onJump: (page: number) => void;
 
-  images: BrewImages;
-  onPickImage: () => void;
-  onInsertImage: (id: string, name: string) => void;
 
+  snapshots: Snapshot[];
+  onSaveVersion: () => void;
+  onRestoreVersion: (snapshot: Snapshot) => void;
+  onDeleteVersion: (id: string) => void;
+
+  /** Solo para el resumen del pie; el panel vive en el editor. */
+  imageBytes: number;
   storage: { chars: number; ratio: number };
 }
 
@@ -48,9 +52,11 @@ export default function Sidebar({
   onImport,
   outline,
   onJump,
-  images,
-  onPickImage,
-  onInsertImage,
+  snapshots,
+  onSaveVersion,
+  onRestoreVersion,
+  onDeleteVersion,
+  imageBytes,
   storage,
 }: SidebarProps) {
   return (
@@ -170,59 +176,64 @@ export default function Sidebar({
         </div>
       )}
 
-      {tab === "images" && (
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="px-2 pt-2">
-            <button
-              type="button"
-              onClick={onPickImage}
-              className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--chrome-border)] px-2 py-2 text-xs text-[var(--chrome-muted)] transition hover:border-[var(--chrome-accent)] hover:text-[var(--chrome-accent)]"
-            >
-              <ImagePlus size={14} />
-              Añadir imagen
-            </button>
-            <p className="px-1 pt-1.5 text-[11px] leading-snug text-[var(--chrome-muted)]">
-              También puedes arrastrarlas o pegarlas sobre el editor.
-            </p>
-          </div>
 
-          <ul className="flex-1 space-y-1 overflow-auto px-2 py-2">
-            {images.list.map((image) => (
-              <li key={image.id}>
-                <div className="group flex items-center gap-2 rounded-md p-1 transition hover:bg-[#221d19]">
-                  <button
-                    type="button"
-                    onClick={() => onInsertImage(image.id, image.name)}
-                    title="Insertar en el documento"
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={images.urls[image.id]}
-                      alt=""
-                      className="h-9 w-9 shrink-0 rounded object-cover"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[12px] text-[var(--chrome-text)]">
-                        {image.name}
+      {tab === "history" && (
+        <div className="flex-1 overflow-auto px-2 pb-3">
+          <button
+            type="button"
+            onClick={onSaveVersion}
+            className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-[var(--chrome-border)] px-2 py-1.5 text-xs transition hover:border-[var(--chrome-accent)] hover:text-[var(--chrome-accent)]"
+          >
+            <History size={13} /> Guardar versión ahora
+          </button>
+
+          {snapshots.length === 0 ? (
+            <p className="px-2 py-3 text-xs leading-relaxed text-[var(--chrome-muted)]">
+              Aún no hay versiones. Se guarda una sola cada pocos minutos
+              mientras escribes, y las que pidas tú se conservan siempre.
+            </p>
+          ) : (
+            <ul className="space-y-0.5">
+              {snapshots.map((snapshot) => (
+                <li key={snapshot.id}>
+                  <div className="group flex items-center gap-1 rounded-md px-2 py-1.5 transition hover:bg-[#221d19]">
+                    <button
+                      type="button"
+                      onClick={() => onRestoreVersion(snapshot)}
+                      className="min-w-0 flex-1 text-left"
+                      title="Comparar con el texto actual"
+                    >
+                      <span className="block truncate text-sm">
+                        {describeAge(snapshot.createdAt)}
+                        {!snapshot.auto && (
+                          <span className="ml-1.5 text-[var(--chrome-accent)]">
+                            ·
+                          </span>
+                        )}
                       </span>
-                      <span className="block text-[11px] text-[var(--chrome-muted)]">
-                        {formatBytes(image.size)}
+                      <span className="block truncate text-[11px] text-[var(--chrome-muted)]">
+                        {new Date(snapshot.createdAt).toLocaleString("es-ES", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        · {snapshot.content.length.toLocaleString("es-ES")} car.
                       </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    title="Eliminar imagen"
-                    onClick={() => images.remove(image.id)}
-                    className="rounded p-1 text-[var(--chrome-muted)] opacity-0 transition group-hover:opacity-100 hover:text-[#e08a7a]"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                    </button>
+                    <button
+                      type="button"
+                      title="Eliminar versión"
+                      onClick={() => onDeleteVersion(snapshot.id)}
+                      className="rounded p-1 text-[var(--chrome-muted)] opacity-0 transition group-hover:opacity-100 hover:text-[#e08a7a]"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -248,10 +259,10 @@ export default function Sidebar({
             }}
           />
         </div>
-        {images.totalBytes > 0 && (
+        {imageBytes > 0 && (
           <div className="mt-1.5 flex justify-between">
             <span>Imágenes</span>
-            <span>{formatBytes(images.totalBytes)}</span>
+            <span>{formatBytes(imageBytes)}</span>
           </div>
         )}
       </div>

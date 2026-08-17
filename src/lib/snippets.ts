@@ -5,16 +5,28 @@ export interface Snippet {
   text: string;
 }
 
+export type SnippetTab = "phb" | "tablas" | "fuentes" | "licencias";
+
 export interface SnippetGroup {
   label: string;
+  tab?: SnippetTab;
   items: Snippet[];
 }
+
+export const SNIPPET_TABS: { id: SnippetTab; label: string }[] = [
+  { id: "phb", label: "PHB" },
+  { id: "tablas", label: "Tablas" },
+  { id: "fuentes", label: "Fuentes" },
+  { id: "licencias", label: "Licencias" },
+];
+
 
 export const CURSOR_TOKEN = "$0";
 
 export const SNIPPET_GROUPS: SnippetGroup[] = [
   {
     label: "Estructura",
+    tab: "phb",
     items: [
       { label: "Salto de página", hint: "\\page", text: "\n\\page\n\n$0" },
       { label: "Salto de columna", hint: "\\column", text: "\n\\column\n\n$0" },
@@ -48,7 +60,30 @@ export const SNIPPET_GROUPS: SnippetGroup[] = [
   },
   {
     label: "Portadas e índice",
+    tab: "phb",
     items: [
+      {
+        label: "Cabecera de capítulo",
+        hint: "{{chapter}}",
+        text: `{{chapter,flourish
+# $0Capítulo 1: El Valle de los Reyes
+
+![](https://ejemplo.com/ilustracion.jpg)
+}}
+
+El primer párrafo lleva capitular automática, como tras un encabezado.
+`,
+      },
+      {
+        label: "Cabecera de capítulo más alta",
+        hint: "--chapter-height",
+        text: `{{chapter,--chapter-height:16cm,--chapter-banner-top:2.5cm
+# $0Capítulo 2: La Cripta
+
+![](https://ejemplo.com/ilustracion.jpg)
+}}
+`,
+      },
       {
         label: "Portada con ilustración a sangre",
         hint: "{{frontCover}}",
@@ -99,6 +134,67 @@ export const SNIPPET_GROUPS: SnippetGroup[] = [
 `,
       },
       {
+        label: "Índice automático",
+        hint: "```toc",
+        text: `\`\`\`toc
+title: $0Contenidos
+columns: 3
+levels: 3
+\`\`\`
+`,
+      },
+      {
+        label: "Índice alfabético automático",
+        hint: "```index",
+        text: `\`\`\`index
+title: $0Índice alfabético
+columns: 3
+\`\`\`
+`,
+      },
+      {
+        label: "Marcar término para el índice",
+        hint: "{{ix}}",
+        text: "{{ix $0hechicero}}",
+      },
+      {
+        label: "Referencia a otra página",
+        hint: "{{ref}} + {{#ancla}}",
+        text: "véase la página {{ref $0cripta}}",
+      },
+      {
+        label: "Ancla para referenciar",
+        hint: "{{#ancla}}",
+        text: "# {{#$0cripta}}La Cripta del Rey\n",
+      },
+      {
+        label: "Portadilla de índice a tres columnas",
+        hint: "{{toc,wide,columns-3}}",
+        text: `{{toc,wide,columns-3
+# Contenidos
+
+- ### [{{ $0Prefacio}}{{ 4}}](#p4)
+- ### [{{ Cap. 1: El Valle de los Reyes}}{{ 5}}](#p5)
+  - #### [{{ Los primeros días}}{{ 5}}](#p5)
+    - [{{ Un rumor en la posada}}{{ 6}}](#p6)
+- ### [{{ Apéndice A: Monstruos}}{{ 20}}](#p20)
+}}
+
+{{bleed,bottom
+![](https://ejemplo.com/ilustracion.jpg)
+{{artist Ilustración de Alguien}}
+}}
+`,
+      },
+      {
+        label: "Ilustración a sangre al pie",
+        hint: "{{bleed,bottom}}",
+        text: `{{bleed,bottom
+![]($0https://ejemplo.com/ilustracion.jpg)
+}}
+`,
+      },
+      {
         label: "Índice con guías de puntos",
         hint: "{{toc,wide}}",
         text: `{{toc,wide
@@ -115,6 +211,7 @@ export const SNIPPET_GROUPS: SnippetGroup[] = [
   },
   {
     label: "Cajas",
+    tab: "phb",
     items: [
       {
         label: "Nota (verde)",
@@ -145,6 +242,7 @@ export const SNIPPET_GROUPS: SnippetGroup[] = [
   },
   {
     label: "Reglas",
+    tab: "phb",
     items: [
       {
         label: "Lista de definición",
@@ -158,16 +256,156 @@ export const SNIPPET_GROUPS: SnippetGroup[] = [
       },
       {
         label: "Conjuro",
-        text: "#### $0Bola de Fuego\n*Evocación de nivel 3*\n\n**Tiempo de lanzamiento** :: 1 acción\n**Alcance** :: 45 metros\n**Componentes** :: V, S, M (una bolita de guano de murciélago y azufre)\n**Duración** :: Instantánea\n\nUn destello brillante sale despedido de tu dedo índice hasta un punto que elijas dentro del alcance y estalla en una llamarada.\n",
+        hint: "```spell",
+        text: `\`\`\`spell
+name: $0Bola de Fuego
+level: 3
+school: Evocación
+casting_time: 1 acción
+range: 45 metros
+components: V, S, M (una bolita de guano de murciélago y azufre)
+duration: Instantánea
+classes: Mago, Hechicero
+description: |
+  Un destello brillante sale despedido de tu dedo índice hasta un punto que
+  elijas dentro del alcance y estalla en una llamarada. Cada criatura en una
+  esfera de 6 m de radio centrada en ese punto debe hacer una tirada de
+  salvación de Destreza CD 15.
+higher_levels: El daño aumenta en 1d6 por cada nivel por encima del 3.
+\`\`\`
+`,
       },
       {
         label: "Objeto mágico",
+        hint: "```item",
+        text: `\`\`\`item
+name: $0Espada Solar
+type: Arma (espada larga)
+rarity: muy rara
+attunement: true
+description: |
+  Esta espada arde con luz solar cuando la empuñas. Emite luz brillante en un
+  radio de 4,5 m y luz tenue otros 4,5 m más.
+\`\`\`
+`,
+      },
+      {
+        label: "Conjuro escrito a mano",
+        text: "#### $0Bola de Fuego\n*Evocación de nivel 3*\n\n**Tiempo de lanzamiento** :: 1 acción\n**Alcance** :: 45 metros\n**Componentes** :: V, S, M (una bolita de guano de murciélago y azufre)\n**Duración** :: Instantánea\n\nUn destello brillante sale despedido de tu dedo índice hasta un punto que elijas dentro del alcance y estalla en una llamarada.\n",
+      },
+      {
+        label: "Objeto mágico escrito a mano",
         text: "#### $0Espada Solar\n*Arma (espada larga), muy rara (requiere sintonización)*\n\nEsta espada arde con luz solar cuando la empuñas.\n",
       },
     ],
   },
   {
+    label: "Personajes",
+    tab: "phb",
+    items: [
+      {
+        label: "Hoja de personaje (2024)",
+        hint: "```sheet",
+        text: `\`\`\`sheet
+edition: 2024
+name: $0
+class:
+level: 1
+species:
+background:
+size: Mediano
+player:
+stats: [10, 10, 10, 10, 10, 10]
+saves: []
+skills: []
+expertise: []
+ac:
+speed: 9 m
+hp:
+hit_dice:
+attacks:
+  - name:
+    bonus:
+    damage:
+    notes:
+proficiencies:
+languages:
+equipment: |
+coins:
+features: |
+armor_training:
+weapon_mastery:
+traits: |
+feats:
+\`\`\`
+`,
+      },
+      {
+        label: "Hoja de personaje (2014)",
+        hint: "edition: 2014",
+        text: `\`\`\`sheet
+edition: 2014
+name: $0
+class:
+level: 1
+species:
+background:
+alignment:
+player:
+stats: [10, 10, 10, 10, 10, 10]
+saves: []
+skills: []
+ac:
+speed: 9 m
+hp:
+hit_dice:
+attacks:
+  - name:
+    bonus:
+    damage:
+    notes:
+proficiencies:
+languages:
+equipment: |
+coins:
+features: |
+personality:
+ideals:
+bonds:
+flaws:
+\`\`\`
+`,
+      },
+      {
+        label: "Hoja rellenada de ejemplo",
+        text: `\`\`\`sheet
+edition: 2024
+name: $0Vandra Piedrahonda
+class: Guerrera
+level: 6
+species: Enana de las colinas
+background: Soldado
+stats: [17, 14, 16, 10, 12, 8]
+saves: [fue, con]
+skills: [atletismo, intimidacion, percepcion, supervivencia]
+expertise: [atletismo]
+ac: 18
+speed: 7,5 m
+hp: 52
+hit_dice: 6d10
+attacks:
+  - name: Hacha a dos manos
+    bonus: "+7"
+    damage: 1d12 + 4 cortante
+    notes: Pesada, a dos manos
+\`\`\`
+`,
+      },
+    ],
+  },
+  {
     label: "Criaturas",
+    tab: "phb",
     items: [
       {
         label: "Bloque de estadísticas",
@@ -256,6 +494,7 @@ actions:
   },
   {
     label: "Adornos",
+    tab: "phb",
     items: [
       {
         label: "Imagen de bordes rasgados",
@@ -266,6 +505,49 @@ actions:
         label: "Imagen rasgada solo por abajo",
         hint: "{torn-bottom}",
         text: "![$0](https://ejemplo.com/imagen.jpg) {torn-bottom,width:100%}\n",
+      },
+      {
+        label: "Imagen con borde de pincel",
+        hint: "{brush}",
+        text: "![$0](https://ejemplo.com/imagen.jpg) {brush,width:100%}\n",
+      },
+      {
+        label: "Imagen con borde muy comido",
+        hint: "{brush-rough}",
+        text: "![$0](https://ejemplo.com/imagen.jpg) {brush-rough,width:100%}\n",
+      },
+      {
+        label: "Ilustración sangrando por el lado",
+        hint: "{brush,position:absolute}",
+        text: "![$0](https://ejemplo.com/imagen.jpg) {brush,position:absolute,right:-1cm,top:4cm,width:9.5cm,height:17cm}\n",
+      },
+      {
+        label: "Tarjeta / memorando",
+        hint: "{{memo}}",
+        text: `{{memo,pinned
+$0Nuestra Vía Integrada de Éxito del Becario es un sistema robusto y sin
+parangón para un crecimiento fiable año tras año.
+
+—Omin Dran
+}}
+`,
+      },
+      {
+        label: "Mapa con cuadrícula",
+        hint: "{{map,grid}}",
+        text: `{{map,grid,--grid-size:1cm
+![]($0https://ejemplo.com/mapa.jpg)
+{{scale 1 casilla = 1,5 m}}
+}}
+`,
+      },
+      {
+        label: "Mapa con hexágonos",
+        hint: "{{map,hexgrid}}",
+        text: `{{map,hexgrid,--grid-size:1.2cm
+![]($0https://ejemplo.com/mapa.jpg)
+}}
+`,
       },
       {
         label: "Mancha de acuarela",
@@ -285,6 +567,7 @@ actions:
   },
   {
     label: "Imágenes",
+    tab: "phb",
     items: [
       {
         label: "Imagen simple",
@@ -302,6 +585,153 @@ actions:
       {
         label: "Imagen flotante a la derecha",
         text: "![$0](https://ejemplo.com/imagen.jpg) {float:right,width:4cm,margin:0 0 0.3cm 0.3cm}\n",
+      },
+    ],
+  },
+  {
+    label: "Tablas",
+    tab: "tablas",
+    items: [
+      {
+        label: "Tabla",
+        hint: "| d6 | … |",
+        text: "| d6 | Resultado |\n|:--:|:----------|\n| 1  | $0Nada ocurre |\n| 2  | Un ruido lejano |\n",
+      },
+      {
+        label: "Tabla ancha",
+        hint: "{{wide}}",
+        text: "{{wide\n##### $0Título de la tabla\n| Nivel | Bono | Rasgos |\n|:-----:|:----:|:-------|\n| 1 | +2 | Rasgo inicial |\n| 2 | +2 | Otro rasgo |\n}}\n",
+      },
+      {
+        label: "Dos tablas en paralelo",
+        hint: "{{split-table}}",
+        text: "{{split-table\n| d6 | $0Día |\n|:--:|:----|\n| 1  | Lluvia |\n| 2  | Niebla |\n\n| d6 | Noche |\n|:--:|:------|\n| 1  | Despejado |\n| 2  | Tormenta |\n}}\n",
+      },
+      {
+        label: "Tabla con marco",
+        hint: "{{framed-table}}",
+        text: "{{framed-table\n##### $0Objetos de la mochila\n| d4 | Objeto |\n|:--:|:-------|\n| 1  | Cuerda de 15 m |\n| 2  | Yesquero |\n}}\n",
+      },
+      {
+        label: "Tabla de progresión de clase",
+        hint: "{{class-table}}",
+        text: `{{wide,class-table
+##### El $0Buscador
+| Nivel | Bono de competencia | Rasgos | Trucos | 1.º | 2.º |
+|:-----:|:-------------------:|:-------|:------:|:---:|:---:|
+| 1.º | +2 | Sentido del tesoro | 2 | 2 | — |
+| 2.º | +2 | Instinto de saqueo | 2 | 3 | — |
+| 3.º | +2 | Especialidad | 2 | 4 | 2 |
+| 4.º | +2 | Mejora de característica | 3 | 4 | 3 |
+}}
+`,
+      },
+    ],
+  },
+  {
+    label: "Familias",
+    tab: "fuentes",
+    items: [
+      {
+        label: "Texto (EB Garamond)",
+        hint: "{{f-body}}",
+        text: "{{f-body $0texto}}",
+      },
+      {
+        label: "Titulares (Cinzel)",
+        hint: "{{f-heading}}",
+        text: "{{f-heading $0texto}}",
+      },
+      {
+        label: "Capitulares (Cinzel Decorative)",
+        hint: "{{f-display}}",
+        text: "{{f-display $0texto}}",
+      },
+      {
+        label: "Fichas y notas (Alegreya Sans)",
+        hint: "{{f-sans}}",
+        text: "{{f-sans $0texto}}",
+      },
+      {
+        label: "Manuscrita (tarjetas)",
+        hint: "{{f-hand}}",
+        text: "{{f-hand $0texto}}",
+      },
+      {
+        label: "Monoespaciada",
+        hint: "{{f-mono}}",
+        text: "{{f-mono $0texto}}",
+      },
+      {
+        label: "Versalitas",
+        hint: "{{smallcaps}}",
+        text: "{{smallcaps $0texto}}",
+      },
+      {
+        label: "Cualquier otra fuente",
+        hint: "font-family",
+        text: '{{font-family:$0Georgia texto}}',
+      },
+      {
+        label: "Cambiar la fuente de todo el documento",
+        hint: "pestaña Estilo",
+        text: "/* Esto va en la pestaña Estilo, no aquí */\n:scope { --font-brew-body: $0\"Mi Fuente\"; }\n",
+      },
+    ],
+  },
+  {
+    label: "Avisos",
+    tab: "licencias",
+    items: [
+      {
+        label: "Créditos de ilustración",
+        hint: "{{artist}}",
+        text: "{{artist Ilustración de $0Alguien}}\n",
+      },
+      {
+        label: "Creative Commons BY 4.0",
+        text: "{{license\n##### Licencia\n$0«Título de la obra» de Tu Nombre está bajo licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.es).\n}}\n",
+      },
+      {
+        label: "Creative Commons BY-NC-SA 4.0",
+        text: "{{license\n##### Licencia\n$0«Título de la obra» de Tu Nombre está bajo licencia [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es).\n}}\n",
+      },
+      {
+        label: "Licencia MIT (para código o herramientas)",
+        text: `{{license
+##### Licencia MIT
+Copyright (c) $0AÑO NOMBRE
+
+Por la presente se concede permiso, sin cargo, a cualquier persona que obtenga
+una copia de este software y los archivos de documentación asociados, para
+utilizarlos sin restricción, incluyendo sin limitación los derechos de uso,
+copia, modificación, fusión, publicación, distribución, sublicencia y/o venta.
+
+EL SOFTWARE SE PROPORCIONA «TAL CUAL», SIN GARANTÍA DE NINGÚN TIPO.
+}}
+`,
+      },
+      {
+        label: "Contenido de fan (plantilla)",
+        hint: "revisa el texto oficial",
+        text: `{{license
+##### Aviso
+$0Este es contenido no oficial. Sustituye este párrafo por el texto exacto de la
+política de contenido de fan del titular de los derechos: no lo transcribas de
+memoria, cópialo de su web.
+}}
+`,
+      },
+      {
+        label: "Aviso de licencia abierta (plantilla)",
+        hint: "pega el texto oficial",
+        text: `{{license
+##### Aviso de licencia
+$0Pega aquí el texto íntegro de la licencia abierta que uses (ORC, OGL u otra),
+copiado de la fuente oficial. Estas licencias exigen reproducir el aviso
+palabra por palabra, así que no vale un resumen.
+}}
+`,
       },
     ],
   },

@@ -59,6 +59,8 @@ interface StatblockData {
 
   lang?: "es" | "en";
   labels?: Partial<Labels>;
+  /** Nombre corto de una ficha del bestiario; lo demás la sobrescribe. */
+  ref?: string;
 }
 
 type Labels = typeof LABELS.es;
@@ -342,8 +344,21 @@ export function statblockPlugin(md: MarkdownIt): void {
     try {
       const data = load(tokens[idx].content) as StatblockData | null;
       if (!data || typeof data !== "object") {
-        throw new Error("statblock must be a YAML mapping");
+        throw new Error("el bloque debe ser un mapa YAML");
       }
+
+      // `ref:` trae la ficha del bestiario y lo escrito aquí la sobrescribe,
+      // que es como se hace una variante sin duplicar el YAML entero.
+      if (data.ref) {
+        const stored = (env as { creatures?: Record<string, string> } | undefined)
+          ?.creatures?.[data.ref];
+        if (!stored) {
+          throw new Error(`no hay ninguna criatura «${data.ref}» en el bestiario`);
+        }
+        const base = (load(stored) ?? {}) as StatblockData;
+        return renderStatblock({ ...base, ...data, ref: undefined }, md);
+      }
+
       return renderStatblock(data, md);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

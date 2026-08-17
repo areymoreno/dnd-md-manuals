@@ -14,7 +14,15 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     rows: [
       { syntax: "\\page", result: "Empieza una página nueva." },
       { syntax: "\\column", result: "Manda lo siguiente a la otra columna." },
-      { syntax: "{{wide … }}", result: "Bloque que ocupa las dos columnas." },
+      {
+        syntax: "{{wide … }}",
+        result: "Bloque que cruza todas las columnas de la página.",
+      },
+      {
+        syntax: "{{wide,columns-3 … }}",
+        result:
+          "Bloque con su propio número de columnas. Va junto a «wide»: sin cruzar la página, las columnas quedarían dentro de una sola y saldrían larguísimas.",
+      },
       { syntax: "___", result: "Separador horizontal ornamental." },
       { syntax: "{{footnote texto}}", result: "Pie de página." },
       {
@@ -76,6 +84,26 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
           "Añade la cenefa dorada. Va aparte porque casi toda ilustración de portada ya trae la suya.",
       },
       {
+        syntax: "{{chapter … }}",
+        result:
+          "Apertura de capítulo: la ilustración sangra por los tres lados y se rasga arriba y abajo, y el H1 va sobre una tira de papel roto. El párrafo siguiente lleva capitular.",
+      },
+      {
+        syntax: "{{chapter,flourish,--chapter-height:16cm … }}",
+        result:
+          "«flourish» añade el rasgo dorado. Se ajusta con --chapter-height, --chapter-banner-top, --chapter-title-size y --chapter-banner-bg.",
+      },
+      {
+        syntax: "{{bleed,bottom … }}",
+        result:
+          "Ilustración pegada al pie de la página, tocando los tres bordes. La página se reserva el sitio sola. También {{bleed,top }}, y los tamaños short y tall.",
+      },
+      {
+        syntax: "{{toc,wide,columns-3 … }}",
+        result:
+          "Índice a tres columnas, con el título cruzando por encima. Es la portadilla de contenidos de los manuales.",
+      },
+      {
         syntax: "{{toc,wide … }}",
         result:
           "Índice. Con enlaces del tipo [{{ Nombre}}{{ 12}}](#p12) sale la guía de puntos; cada página tiene id p1, p2…",
@@ -133,6 +161,16 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
           "Bordes rasgados. También por lados sueltos: {torn-top}, {torn-bottom}, {torn-left}, {torn-right}.",
       },
       {
+        syntax: "![](x.jpg) {brush}",
+        result:
+          "Borde de pincel: recorte irregular a mano alzada por los cuatro lados. {brush-rough} lo deja más comido. Distinto de {torn}, que es papel rasgado y ondulado.",
+      },
+      {
+        syntax: "{{memo … }}",
+        result:
+          "Cuartilla ladeada con una cita. Si el último párrafo empieza por raya, se maqueta como firma. {{memo,pinned }} la saca al margen; --memo-rotate cambia el ángulo.",
+      },
+      {
         syntax: "{{watercolor,wc-verde,top:3cm,left:1cm }}",
         result:
           "Mancha de acuarela detrás del texto. Colores: wc-rojo, wc-verde, wc-azul, wc-morado, wc-ocre, wc-tinta.",
@@ -148,9 +186,44 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
           "CSS propio de cada documento. Dentro de la app va acotado a la página, así que no puede romper el editor; en el .html exportado viaja incrustado.",
       },
       {
+        syntax: "Desplegable de la paleta",
+        result:
+          "Cinco temas por documento: Manual del Jugador, Guía del Dungeon Master, Limpio, Grimorio (oscuro) y Diario (sepia).",
+      },
+      {
         syntax: ":scope { --parchment: #f6efe0; }",
         result:
           "En ese CSS, :scope es la página. Casi todo el diseño se cambia tocando variables: --parchment, --accent, --note-bg, --statblock-accent…",
+      },
+    ],
+  },
+  {
+    title: "Índices y referencias",
+    rows: [
+      {
+        syntax: "```toc",
+        result:
+          "Índice de contenidos que se construye solo, con los números de página reales. Opciones: title, columns (2 o 3) y levels (1 a 3).",
+      },
+      {
+        syntax: "```index",
+        result:
+          "Índice alfabético del final, agrupado por inicial y a tres columnas.",
+      },
+      {
+        syntax: "{{ix hechicero}}",
+        result:
+          "Escribe «hechicero» y lo apunta en el índice alfabético con su página. {{ix,hidden término}} solo lo apunta, sin escribirlo.",
+      },
+      {
+        syntax: "{{#cripta}} … {{ref cripta}}",
+        result:
+          "Ancla y referencia: la segunda escribe el número de página donde está la primera, y se recalcula sola al mover contenido.",
+      },
+      {
+        syntax: "{{map,grid,--grid-size:1cm … }}",
+        result:
+          "Cuadrícula sobre un mapa, en medidas de página. También hexgrid, y --grid-color, --grid-line y --grid-opacity.",
       },
     ],
   },
@@ -172,6 +245,26 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
       {
         syntax: "cr: 17",
         result: "La PX correspondiente se añade automáticamente.",
+      },
+      {
+        syntax: "```sheet",
+        result:
+          "Hoja de personaje a página completa. `edition: 2024` o `2014`. Los modificadores, el bono de competencia y las habilidades se calculan solos; lo que dejes vacío queda como recuadro para rellenar a mano.",
+      },
+      {
+        syntax: "saves / skills / expertise",
+        result:
+          "Listas con lo que tengas: [fue, con] y [atletismo, sigilo]. La pericia suma el bono dos veces y se marca con un punto anillado.",
+      },
+      {
+        syntax: "```spell",
+        result:
+          "Conjuro desde YAML: name, level, school, casting_time, range, components, duration, classes, description, higher_levels.",
+      },
+      {
+        syntax: "```item",
+        result:
+          "Objeto mágico: name, type, rarity, attunement, description. `attunement: true` escribe «requiere sintonización».",
       },
       {
         syntax: "traits / actions / bonus_actions / reactions / legendary / lair",
