@@ -12,7 +12,20 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "dist-desktop/**",
   ]),
+  {
+    // El proceso principal de Electron es CommonJS de Node, no un módulo del
+    // navegador: `require` es lo correcto ahí.
+    files: ["electron/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { require: "readonly", module: "writable", __dirname: "readonly", process: "readonly" },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

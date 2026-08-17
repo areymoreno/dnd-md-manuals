@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "desktop:build": "DESKTOP=1 next build",
+    "desktop:dev": "npm run desktop:build && env -u ELECTRON_RUN_AS_NODE electron .",
+    "desktop:dmg": "npm run desktop:build && env -u ELECTRON_RUN_AS_NODE electron-builder --mac dmg"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -29,9 +32,43 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "main": "electron/main.js",
+  "build": {
+    "appId": "es.areymoreno.forjademanuales",
+    "productName": "Forja de Manuales",
+    "directories": {
+      "output": "dist-desktop",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "out/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "${productName}"
+    }
+  },
+  "description": "Editor Markdown para maquetar manuales de rol con el aspecto de D&D 5e.",
+  "author": "Alberto Rey Moreno"
 }

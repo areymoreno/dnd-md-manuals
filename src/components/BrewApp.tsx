@@ -35,6 +35,7 @@ import { useBrewImages } from "@/hooks/useBrewImages";
 import { formatBytes } from "@/lib/images";
 import { useSnapshots } from "@/hooks/useSnapshots";
 import { scopeCss, STYLE_PLACEHOLDER } from "@/lib/customCss";
+import { bridge, isDesktop, paperSize } from "@/lib/desktop";
 import { countMojibake, decodeFile, repairMojibake } from "@/lib/encoding";
 import {
   extractOutline,
@@ -813,6 +814,34 @@ export default function BrewApp() {
     [activeDoc, snapshots, flash],
   );
 
+  /**
+   * En escritorio el PDF lo genera el proceso principal con `printToPDF`: sin
+   * diálogo del navegador y sin que nadie tenga que acordarse de poner los
+   * márgenes a cero. En la web se imprime como siempre.
+   */
+  const handlePrint = useCallback(async () => {
+    const desktop = bridge();
+    if (!desktop) {
+      window.print();
+      return;
+    }
+
+    const result = await desktop.exportarPdf({
+      nombre: safeFilename(activeDoc.name),
+      ...paperSize(pageSize, settings.printMarks),
+    });
+
+    if (result.ok) flash("PDF guardado");
+    else if (result.motivo !== "cancelado") flash("No se pudo guardar el PDF");
+  }, [activeDoc.name, pageSize, settings.printMarks, flash]);
+
+  // El menú «Archivo → Exportar a PDF…» de la app nativa entra por aquí.
+  useEffect(() => {
+    const desktop = bridge();
+    if (!desktop) return;
+    return desktop.alExportarPdf(() => void handlePrint());
+  }, [handlePrint]);
+
   const handleExportMarkdown = useCallback(() => {
     if (!activeDoc) return;
     downloadFile(`${safeFilename(activeDoc.name)}.md`, activeDoc.content);
@@ -1296,8 +1325,12 @@ ${renderBrew(activeDoc.content, {
 
           <button
             type="button"
-            onClick={() => window.print()}
-            title="Imprimir o guardar como PDF"
+            onClick={() => void handlePrint()}
+            title={
+              isDesktop()
+                ? "Guardar como PDF"
+                : "Imprimir o guardar como PDF"
+            }
             className="flex items-center gap-1.5 rounded-md border border-[var(--chrome-border)] px-2.5 py-1.5 text-sm transition hover:border-[var(--chrome-accent)] hover:text-[var(--chrome-accent)]"
           >
             <Printer size={15} />
